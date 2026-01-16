@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Body, UseGuards, Query, Delete } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Body, UseGuards, Query, Delete, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -34,12 +34,45 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
-  @Get('profile/me')
+  @Get('me/profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  async getProfile(@Query('userId') userId: string) {
-    return this.usersService.getProfile(userId);
+  async getMyProfile(@Request() req: any) {
+    return this.usersService.getProfile(req.user.userId);
+  }
+
+  @Get('me/enrollments')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current student enrollments' })
+  async getMyEnrollments(@Request() req: any) {
+    return this.usersService.getUserEnrollments(req.user.userId);
+  }
+
+  @Get('me/courses')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current instructor courses' })
+  async getMyCourses(@Request() req: any) {
+    return this.usersService.getUserCourses(req.user.userId);
+  }
+
+  @Get('me/payments')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user payment history' })
+  async getMyPayments(@Request() req: any) {
+    return this.usersService.getUserPayments(req.user.userId);
+  }
+
+  @Get('me/progress')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user learning progress' })
+  async getMyProgress(@Request() req: any) {
+    return this.usersService.getUserProgress(req.user.userId);
   }
 
   @Patch(':id')

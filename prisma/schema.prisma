@@ -22,8 +22,10 @@ model User {
   applications InstructorApplication[]
   progress     LessonProgress[]
   otp          OTP?
+  avatarUrl    String?
   payments     Payment[]
   reviews      Review[]
+  attachments  Attachment[]
 
   @@map("users")
 }
@@ -51,9 +53,11 @@ model Course {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   instructor   User         @relation("CourseInstructor", fields: [instructorId], references: [id])
+  thumbnailUrl String?
   enrollments  Enrollment[]
   modules      Module[]
   reviews      Review[]
+  attachments  Attachment[]
 
   @@map("courses")
 }
@@ -84,8 +88,28 @@ model Lesson {
   updatedAt DateTime         @updatedAt
   progress  LessonProgress[]
   module    Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
 
   @@map("lessons")
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  type      String
+  size      Int
+  mimeType  String?
+  userId    String
+  courseId  String?
+  lessonId  String?
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
 }
 
 model Enrollment {

@@ -33,7 +33,8 @@ export class UsersService {
             },
         });
         if (!user) throw new NotFoundException('User not found');
-        return user;
+        const { password, ...result } = user;
+        return result;
     }
 
     async getProfile(id: string) {
@@ -57,29 +58,65 @@ export class UsersService {
     }
 
     async getUserEnrollments(id: string) {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
+        return this.prisma.enrollment.findMany({
+            where: { userId: id },
             include: {
-                enrollments: {
+                course: {
                     include: {
-                        course: true,
+                        _count: {
+                            select: {
+                                modules: true
+                            }
+                        }
+                    }
+                },
+                payment: true,
+            },
+        });
+    }
+
+    async getUserCourses(id: string) {
+        return this.prisma.course.findMany({
+            where: { instructorId: id },
+            include: {
+                _count: {
+                    select: {
+                        enrollments: true,
                     },
                 },
             },
         });
-        if (!user) throw new NotFoundException('User not found');
-        return user.enrollments;
     }
 
-    async getUserCourses(id: string) {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
+    async getUserPayments(id: string) {
+        return this.prisma.payment.findMany({
+            where: { userId: id },
             include: {
-                courses: true,
+                enrollment: {
+                    include: {
+                        course: true
+                    }
+                }
             },
+            orderBy: { createdAt: 'desc' }
         });
-        if (!user) throw new NotFoundException('User not found');
-        return user.courses;
+    }
+
+    async getUserProgress(id: string) {
+        return this.prisma.lessonProgress.findMany({
+            where: { userId: id },
+            include: {
+                lesson: {
+                    include: {
+                        module: {
+                            include: {
+                                course: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     async remove(id: string) {

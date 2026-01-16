@@ -1,11 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
-
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
-import { CreateCourseDto } from './dto/create-course.dto';
-import { UpdateCourseDto } from './dto/update-course.dto';
-import { CreateModuleDto } from './dto/create-module.dto';
-import { CreateLessonDto } from './dto/create-lesson.dto';
+import { CreateCourseDto, UpdateCourseDto, CreateModuleDto, CreateLessonDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -13,7 +9,6 @@ import { UserRole } from '../../common/types/enums';
 
 @ApiTags('Courses')
 @Controller('courses')
-
 export class CoursesController {
    constructor(private readonly coursesService: CoursesService) { }
 
@@ -87,6 +82,4 @@ export class CoursesController {
    ) {
       return this.coursesService.addLesson(courseId, moduleId, createLessonDto);
    }
-
-
 }

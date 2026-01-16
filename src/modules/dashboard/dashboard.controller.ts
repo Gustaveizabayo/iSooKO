@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Query, Param } from '@nestjs/common';
+import { Controller, Get, UseGuards, Query, Param, Request, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -20,19 +20,48 @@ export class DashboardController {
     return this.dashboardService.getAdminDashboard();
   }
 
+  @Get('me/instructor')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current instructor dashboard stats' })
+  async getMyInstructorDashboard(@Request() req: any) {
+    return this.dashboardService.getInstructorDashboard(req.user.userId);
+  }
+
   @Get('instructor/:instructorId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get instructor dashboard stats' })
-  async getInstructorDashboard(@Param('instructorId') instructorId: string) {
+  @ApiOperation({ summary: 'Get instructor dashboard stats (Admin or self)' })
+  async getInstructorDashboard(
+    @Param('instructorId') instructorId: string,
+    @Request() req: any
+  ) {
+    if (req.user.role !== UserRole.ADMIN && req.user.userId !== instructorId) {
+      throw new ForbiddenException('Access denied');
+    }
     return this.dashboardService.getInstructorDashboard(instructorId);
+  }
+
+  @Get('me/student')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current student dashboard stats' })
+  async getMyStudentDashboard(@Request() req: any) {
+    return this.dashboardService.getStudentDashboard(req.user.userId);
   }
 
   @Get('student/:studentId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get student dashboard stats' })
-  async getStudentDashboard(@Param('studentId') studentId: string) {
+  @ApiOperation({ summary: 'Get student dashboard stats (Admin or self)' })
+  async getStudentDashboard(
+    @Param('studentId') studentId: string,
+    @Request() req: any
+  ) {
+    if (req.user.role !== UserRole.ADMIN && req.user.userId !== studentId) {
+      throw new ForbiddenException('Access denied');
+    }
     return this.dashboardService.getStudentDashboard(studentId);
   }
 
