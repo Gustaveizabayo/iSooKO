@@ -1,4 +1,5 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Param } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Param, Get, Req, Res } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -14,6 +15,22 @@ import { UserRole } from '../../common/types/enums';
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) { }
+
+    @Get('google')
+    @UseGuards(AuthGuard('google'))
+    @ApiOperation({ summary: 'Login with Google' })
+    async googleAuth(@Req() req) { }
+
+    @Get('google/callback')
+    @UseGuards(AuthGuard('google'))
+    @ApiOperation({ summary: 'Google Auth Callback' })
+    async googleAuthRedirect(@Req() req, @Res() res) {
+        const result = await this.authService.loginGoogle(req.user);
+        // For simplicity, return JSON directly or redirect to a frontend with token
+        // res.redirect(`http://localhost:3000?token=${result.access_token}`);
+        // Since we don't know the frontend URL, returning JSON
+        res.status(HttpStatus.OK).json(result);
+    }
 
     @Post('register')
     @ApiOperation({ summary: 'Register a new user' })
@@ -41,6 +58,22 @@ export class AuthController {
     @ApiOperation({ summary: 'Resend OTP' })
     async resendOtp(@Body() resendOtpDto: ResendOtpDto) {
         return this.authService.resendOtp(resendOtpDto);
+    }
+
+    @Post('refresh')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Refresh access token' })
+    async refreshToken(@Body() body: { userId: string; refreshToken: string }) {
+        return this.authService.refreshAccessToken(body.userId, body.refreshToken);
+    }
+
+    @Post('logout')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Logout and revoke refresh token' })
+    async logout(@Body('userId') userId: string) {
+        await this.authService.revokeRefreshToken(userId);
+        return { message: 'Logged out successfully' };
     }
 
     @Post('apply-instructor')

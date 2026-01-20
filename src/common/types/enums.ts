@@ -27,16 +27,33 @@ export const PaymentStatus = {
 } as const;
 export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
 
-export const LessonType = {
-    VIDEO: 'VIDEO',
-    TEXT: 'TEXT',
-    QUIZ: 'QUIZ',
-} as const;
-export type LessonType = typeof LessonType[keyof typeof LessonType];
-
 export const ApplicationStatus = {
     PENDING: 'PENDING',
     APPROVED: 'APPROVED',
     REJECTED: 'REJECTED',
 } as const;
 export type ApplicationStatus = typeof ApplicationStatus[keyof typeof ApplicationStatus];
+
+export const CourseStatus = {
+    DRAFT: 'DRAFT',
+    SCHEDULED: 'SCHEDULED',
+    PUBLISHED: 'PUBLISHED',
+    ARCHIVED: 'ARCHIVED',
+} as const;
+export type CourseStatus = typeof CourseStatus[keyof typeof CourseStatus];
+
+export const LessonType = {
+    VIDEO: 'VIDEO',
+    ARTICLE: 'ARTICLE',
+    QUIZ: 'QUIZ',
+    ASSIGNMENT: 'ASSIGNMENT',
+    RESOURCE: 'RESOURCE',
+} as const;
+export type LessonType = typeof LessonType[keyof typeof LessonType];
+
+export const ReviewStatus = {
+    PENDING: 'PENDING',
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED',
+} as const;
+export type ReviewStatus = typeof ReviewStatus[keyof typeof ReviewStatus];

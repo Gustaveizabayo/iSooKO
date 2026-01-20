@@ -18,7 +18,7 @@ export class EmailService {
     });
   }
 
-  async sendOtpEmail(to: string, otpCode: string): Promise<void> {
+  async sendOtpEmailDirect(to: string, otpCode: string): Promise<void> {
     const mailOptions = {
       from: `"Course Platform" <${this.configService.get<string>('SMTP_USER') || 'noreply@courseplatform.com'}>`,
       to,

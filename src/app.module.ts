@@ -14,6 +14,9 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
+import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
+import { MetricsMiddleware } from './common/middleware/metrics.middleware';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 @Module({
   imports: [
@@ -25,6 +28,13 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
       ttl: 60000,
       limit: 10,
     }]),
+
+    PrometheusModule.register({
+      path: '/metrics',
+      defaultMetrics: {
+        enabled: true,
+      },
+    }),
 
     DatabaseModule,
     AuthModule,
@@ -43,4 +53,9 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {
+  configure(consumer: any) {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+    consumer.apply(MetricsMiddleware).forRoutes('*');
+  }
+}

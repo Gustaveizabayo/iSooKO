@@ -29,6 +29,9 @@ model User {
   profile          Profile?
   adminProfileLogs AdminProfileLog[]
 
+  googleId     String? @unique
+  refreshToken String?
+
   @@map("users")
 }
 
@@ -51,9 +54,11 @@ model Course {
   duration     Int
   category     String
   instructorId String
-  isPublished  Boolean      @default(false)
+  status       CourseStatus @default(DRAFT)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  createdBy    String?
+  updatedBy    String?
   instructor   User         @relation("CourseInstructor", fields: [instructorId], references: [id])
   thumbnailUrl String?
   enrollments  Enrollment[]
@@ -121,6 +126,8 @@ model Enrollment {
   status      EnrollmentStatus @default(ACTIVE)
   enrolledAt  DateTime         @default(now())
   completedAt DateTime?
+  cancelledAt DateTime?
+  createdBy   String?
   course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   payment     Payment?
@@ -139,6 +146,7 @@ model Payment {
   transactionId String?
   paidAt        DateTime?
   createdAt     DateTime      @default(now())
+  createdBy     String?
   userId        String
   enrollment    Enrollment    @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -180,8 +188,14 @@ model Review {
   rating    Int
   comment   String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  isFlagged     Boolean       @default(false)
+  reviewStatus  ReviewStatus  @default(PENDING)
 
   @@unique([courseId, userId])
   @@map("reviews")
@@ -236,6 +250,19 @@ enum LessonType {
   QUIZ
   ASSIGNMENT
   RESOURCE
+}
+
+enum CourseStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model Profile {

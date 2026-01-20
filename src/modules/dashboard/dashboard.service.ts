@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { UserRole } from '../../common/types/enums';
+import { UserRole, CourseStatus } from '../../common/types/enums';
 
 @Injectable()
 export class DashboardService {
@@ -20,13 +20,13 @@ export class DashboardService {
 
     // Course statistics
     const courseStats = await this.prisma.course.groupBy({
-      by: ['category', 'isPublished'],
+      by: ['category', 'status'],
       _count: true,
     });
 
     const totalCourses = await this.prisma.course.count();
     const publishedCourses = await this.prisma.course.count({
-      where: { isPublished: true },
+      where: { status: CourseStatus.PUBLISHED },
     });
 
     // Enrollment statistics
@@ -136,7 +136,7 @@ export class DashboardService {
     });
 
     const totalCourses = courses.length;
-    const publishedCourses = courses.filter((c) => c.isPublished).length;
+    const publishedCourses = courses.filter((c) => c.status === CourseStatus.PUBLISHED).length;
 
     // Enrollment statistics
     const enrollments = await this.prisma.enrollment.findMany({
@@ -247,6 +247,89 @@ export class DashboardService {
     };
   }
 
+  async getInstructorAnalytics(instructorId: string, startDate?: string, endDate?: string) {
+    const instructor = await this.prisma.user.findUnique({
+      where: { id: instructorId },
+    });
+
+    if (!instructor) {
+      throw new NotFoundException('Instructor not found');
+    }
+
+    // Revenue growth over time (Instructor specific)
+    const revenueGrowth = await this.prisma.$queryRawUnsafe(`
+      SELECT 
+        DATE_TRUNC('day', p."paidAt") as date,
+        COUNT(*) as transaction_count,
+        SUM(p.amount) as daily_revenue
+      FROM payments p
+      JOIN enrollments e ON p."enrollmentId" = e.id
+      JOIN courses c ON e."courseId" = c.id
+      WHERE c."instructorId" = '${instructorId}' 
+        AND p.status = 'COMPLETED' 
+        AND p."paidAt" IS NOT NULL
+      ${startDate ? `AND p."paidAt" >= '${new Date(startDate).toISOString()}'` : ''}
+      ${endDate ? `AND p."paidAt" <= '${new Date(endDate).toISOString()}'` : ''}
+      GROUP BY DATE_TRUNC('day', p."paidAt")
+      ORDER BY date
+    `);
+
+    // Enrollment growth over time (Instructor specific)
+    const enrollmentGrowth = await this.prisma.$queryRawUnsafe(`
+      SELECT 
+        DATE_TRUNC('day', e."enrolledAt") as date,
+        COUNT(*) as count
+      FROM enrollments e
+      JOIN courses c ON e."courseId" = c.id
+      WHERE c."instructorId" = '${instructorId}'
+      ${startDate ? `AND e."enrolledAt" >= '${new Date(startDate).toISOString()}'` : ''}
+      ${endDate ? `AND e."enrolledAt" <= '${new Date(endDate).toISOString()}'` : ''}
+      GROUP BY DATE_TRUNC('day', e."enrolledAt")
+      ORDER BY date
+    `);
+
+    // Top Performing Courses (Instructor specific)
+    const topCourses = await this.prisma.course.findMany({
+      where: { instructorId },
+      include: {
+        _count: {
+          select: {
+            enrollments: true,
+            reviews: true,
+          },
+        },
+        reviews: {
+          select: {
+            rating: true,
+          },
+        },
+      },
+      orderBy: {
+        enrollments: {
+          _count: 'desc',
+        },
+      },
+      take: 5,
+    });
+
+    const formattedTopCourses = topCourses.map((course) => {
+      const ratings = course.reviews.map(r => r.rating);
+      const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+      return {
+        title: course.title,
+        enrollments: course._count.enrollments,
+        rating: avgRating,
+        revenue: course.price * course._count.enrollments
+      };
+    });
+
+    return {
+      revenueGrowth,
+      enrollmentGrowth,
+      topCourses: formattedTopCourses
+    };
+  }
+
   async getStudentDashboard(studentId: string) {
     const student = await this.prisma.user.findUnique({
       where: { id: studentId },
@@ -342,7 +425,7 @@ export class DashboardService {
 
     const recommendedCourses = await this.prisma.course.findMany({
       where: {
-        isPublished: true,
+        status: CourseStatus.PUBLISHED,
         category: {
           in: enrolledCategories,
         },

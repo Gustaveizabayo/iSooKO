@@ -4,9 +4,42 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { AppModule } from './app.module';
+import { WinstonModule, utilities as nestWinstonUtilities } from 'nest-winston';
+import * as winston from 'winston';
+import { redactFormat } from './common/logging/redact-format';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: WinstonModule.createLogger({
+      transports: [
+        new winston.transports.Console({
+          format: winston.format.combine(
+            redactFormat(),
+            winston.format.timestamp(),
+            winston.format.ms(),
+            nestWinstonUtilities.format.nestLike('iSooKO', { prettyPrint: true }),
+          ),
+        }),
+        new winston.transports.File({
+          filename: 'logs/error.log',
+          level: 'error',
+          format: winston.format.combine(
+            redactFormat(),
+            winston.format.timestamp(),
+            winston.format.json(),
+          ),
+        }),
+        new winston.transports.File({
+          filename: 'logs/combined.log',
+          format: winston.format.combine(
+            redactFormat(),
+            winston.format.timestamp(),
+            winston.format.json(),
+          ),
+        }),
+      ],
+    }),
+  });
 
   // Middleware
   app.use(helmet());

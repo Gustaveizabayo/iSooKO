@@ -29,6 +29,21 @@ export class DashboardController {
     return this.dashboardService.getInstructorDashboard(req.user.userId);
   }
 
+  @Get('me/instructor/analytics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current instructor analytics (charts)' })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  async getMyInstructorAnalytics(
+    @Request() req: any,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.dashboardService.getInstructorAnalytics(req.user.userId, startDate, endDate);
+  }
+
   @Get('instructor/:instructorId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

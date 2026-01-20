@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateCourseDto, UpdateCourseDto, CreateModuleDto, CreateLessonDto } from './dto';
+import { CourseStatus } from '../../common/types/enums';
 
 @Injectable()
 export class CoursesService {
@@ -11,7 +12,7 @@ export class CoursesService {
         return this.prisma.course.create({
             data: {
                 ...courseData,
-                isPublished: false,
+                status: CourseStatus.DRAFT,
                 instructor: { connect: { id: instructorId } },
             },
         });
