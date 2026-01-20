@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'nestjs_app'
+    metrics_path: '/metrics'
+    static_configs:
+      # If running in Docker on Windows/Mac, use host.docker.internal to reach localhost
+      # If running on Linux, you might need to use the actual IP or --network="host"
+      - targets: ['host.docker.internal:3000']
