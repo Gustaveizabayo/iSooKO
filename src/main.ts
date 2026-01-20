@@ -24,7 +24,7 @@ async function bootstrap() {
 
   // Swagger documentation
   const config = new DocumentBuilder()
-    .setTitle('Course Online Platform API')
+    .setTitle('iSooKO')
     .setDescription('testing for an Online Course Enrollment platform')
     .setVersion('1.0')
     .addBearerAuth()
