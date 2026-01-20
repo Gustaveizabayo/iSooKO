@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
-import { EnrollmentStatus } from '../../common/types/enums';
+import { EnrollmentStatus, CourseStatus } from '../../common/types/enums';
 
 @Injectable()
 export class EnrollmentsService {
@@ -19,7 +19,7 @@ export class EnrollmentsService {
       throw new NotFoundException('Course not found');
     }
 
-    if (!course.isPublished) {
+    if (course.status !== CourseStatus.PUBLISHED) {
       throw new ForbiddenException('Course is not published');
     }
 

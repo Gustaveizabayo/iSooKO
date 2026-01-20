@@ -19,12 +19,12 @@ export class AuthController {
     @Get('google')
     @UseGuards(AuthGuard('google'))
     @ApiOperation({ summary: 'Login with Google' })
-    async googleAuth(@Req() req) { }
+    async googleAuth(@Req() req: any) { }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     @ApiOperation({ summary: 'Google Auth Callback' })
-    async googleAuthRedirect(@Req() req, @Res() res) {
+    async googleAuthRedirect(@Req() req: any, @Res() res: any) {
         const result = await this.authService.loginGoogle(req.user);
         // For simplicity, return JSON directly or redirect to a frontend with token
         // res.redirect(`http://localhost:3000?token=${result.access_token}`);
