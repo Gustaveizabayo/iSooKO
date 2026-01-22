@@ -29,6 +29,9 @@ model User {
   attachments      Attachment[]
   profile          Profile?
   adminProfileLogs AdminProfileLog[]
+  attendance       Attendance[]
+  videoAnalytics   VideoAnalytics[]
+  examAttempts     ExamAttempt[]
 
   googleId     String? @unique
   refreshToken String?
@@ -67,6 +70,8 @@ model Course {
   reviews      Review[]
   likes        Like[]
   attachments  Attachment[]
+  liveSessions LiveSession[]
+  attendance   Attendance[]
 
   @@map("courses")
 }
@@ -85,21 +90,52 @@ model Module {
 }
 
 model Lesson {
-  id          String           @id @default(cuid())
-  moduleId    String
-  title       String
-  content     String?
-  videoUrl    String?
-  type        LessonType
-  order       Int
-  duration    Int
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  progress    LessonProgress[]
-  module      Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  attachments Attachment[]
+  id             String           @id @default(cuid())
+  moduleId       String
+  title          String
+  content        String?
+  videoUrl       String?
+  type           LessonType
+  order          Int
+  duration       Int
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  progress       LessonProgress[]
+  videoAnalytics VideoAnalytics[]
+  examAttempts   ExamAttempt[]
+  module         Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  attachments    Attachment[]
 
   @@map("lessons")
+}
+
+model ExamAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  lessonId    String
+  startTime   DateTime @default(now())
+  endTime     DateTime?
+  score       Float?
+  status      String   // STARTED, SUBMITTED, AUTO_SUBMITTED
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  proctorLogs ProctorLog[]
+
+  @@map("exam_attempts")
+}
+
+model ProctorLog {
+  id          String   @id @default(cuid())
+  attemptId   String
+  type        String   // TAB_SWITCH, FACE_LOST, MULTIPLE_FACES, NOISE
+  severity    String   // LOW, MEDIUM, HIGH
+  timestamp   DateTime @default(now())
+  snapshotUrl String?  // link to image if webcam monitoring
+  
+  attempt     ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@map("proctoring_logs")
 }
 
 model Attachment {
@@ -196,8 +232,8 @@ model Review {
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  isFlagged     Boolean       @default(false)
-  reviewStatus  ReviewStatus  @default(PENDING)
+  isFlagged    Boolean      @default(false)
+  reviewStatus ReviewStatus @default(PENDING)
 
   @@unique([courseId, userId])
   @@map("reviews")
@@ -276,7 +312,7 @@ model Profile {
   language        String?
   experience      String?
   qualifications  String?
-  isPublic        Boolean       @default(true)
+  isPublic        Boolean @default(true)
 
   status        ProfileStatus @default(PENDING)
   adminFeedback String?
@@ -322,4 +358,63 @@ model Like {
 
   @@unique([courseId, userId])
   @@map("likes")
+}
+
+enum AttendanceType {
+  ONLINE
+  VIRTUAL
+  ONSITE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  userId    String
+  courseId  String
+  type      AttendanceType
+  status    AttendanceStatus @default(PRESENT)
+  timestamp DateTime         @default(now())
+  metadata  Json? // join/leave times, device info, QR code ref
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("attendance_logs")
+}
+
+model LiveSession {
+  id        String    @id @default(cuid())
+  courseId  String
+  title     String
+  startTime DateTime
+  endTime   DateTime?
+  platform  String // zoom, teams, meet
+  meetingId String?
+  joinUrl   String?
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("live_sessions")
+}
+
+model VideoAnalytics {
+  id            String   @id @default(cuid())
+  userId        String
+  lessonId      String
+  watchDuration Int // seconds
+  lastPosition  Int // seconds
+  completed     Boolean  @default(false)
+  updatedAt     DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("video_analytics")
 }

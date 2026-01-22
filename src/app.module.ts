@@ -19,6 +19,9 @@ import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SessionModule } from './modules/session/session.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { StudentsModule } from './modules/students/students.module';
+import { ProctoringModule } from './modules/proctoring/proctoring.module';
 
 @Module({
   imports: [
@@ -49,6 +52,9 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     ProfilesModule,
     SessionModule,
     ReviewsModule,
+    AttendanceModule,
+    StudentsModule,
+    ProctoringModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
