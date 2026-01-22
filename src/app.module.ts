@@ -18,6 +18,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
 import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SessionModule } from './modules/session/session.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { SessionModule } from './modules/session/session.module';
     UploadsModule,
     ProfilesModule,
     SessionModule,
+    ReviewsModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',

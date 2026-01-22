@@ -25,6 +25,7 @@ model User {
   avatarUrl        String?
   payments         Payment[]
   reviews          Review[]
+  likes            Like[]
   attachments      Attachment[]
   profile          Profile?
   adminProfileLogs AdminProfileLog[]
@@ -64,6 +65,7 @@ model Course {
   enrollments  Enrollment[]
   modules      Module[]
   reviews      Review[]
+  likes        Like[]
   attachments  Attachment[]
 
   @@map("courses")
@@ -307,4 +309,17 @@ enum ProfileStatus {
   ACTIVE
   REJECTED
   SUSPENDED
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  courseId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@map("likes")
 }
