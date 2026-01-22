@@ -47,6 +47,8 @@ export class CoursesService {
                 _count: {
                     select: {
                         enrollments: true,
+                        reviews: true,
+                        likes: true,
                     },
                 },
             },
@@ -71,8 +73,18 @@ export class CoursesService {
                 _count: {
                     select: {
                         enrollments: true,
+                        reviews: true,
+                        likes: true,
                     },
                 },
+                reviews: {
+                    where: { reviewStatus: 'APPROVED' },
+                    take: 5,
+                    include: {
+                        user: { select: { name: true, avatarUrl: true } }
+                    },
+                    orderBy: { createdAt: 'desc' }
+                }
             },
         });
 
