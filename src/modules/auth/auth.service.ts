@@ -10,6 +10,7 @@ import { ResendOtpDto } from './dto/resend-otp.dto';
 import { OtpService } from './otp.service';
 import { EmailService } from '../../utils/email.service';
 import { UserStatus, UserRole } from '../../common/types/enums';
+import { SessionService, SessionContext } from '../session/session.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     private configService: ConfigService,
     private otpService: OtpService,
     private emailService: EmailService,
+    private sessionService: SessionService,
   ) { }
 
   async validateGoogleUser(details: any) {
@@ -57,11 +59,19 @@ export class AuthService {
     });
   }
 
-  async loginGoogle(user: any) {
+  async loginGoogle(user: any, ipAddress: string = 'unknown', deviceId: string = 'unknown') {
+    const sessionId = await this.sessionService.createSession(
+      user.id,
+      SessionContext.GENERAL,
+      deviceId,
+      ipAddress
+    );
+
     const payload = {
       userId: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+      sessionId,
     };
 
     const token = this.jwtService.sign(payload);
@@ -96,11 +106,28 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
+    // Need to validate/refresh the underlying session too?
+    // For now, just issue new JWT. Ideally we check if session is still valid.
+    // We can extract sessionId from the old token if we had it, but here we just have userId.
+    // NOTE: Refresh token flow might need the sessionId to be properly secure.
+    // For this implementation, we simply issue a new access token without session check here (simplified),
+    // OR we should ideally decode the refresh token to get sessionId.
+    // Assuming refresh token payload has sessionId.
+    const decoded = this.jwtService.decode(oldRefreshToken) as any;
+    const sessionId = decoded?.sessionId;
+
+    if (sessionId) {
+      const isValid = await this.sessionService.validateSession(sessionId);
+      if (!isValid) throw new UnauthorizedException('Session expired or invalid');
+      await this.sessionService.refreshSession(sessionId);
+    }
+
     // Generate new tokens (rotation)
     const payload = {
       userId: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+      sessionId
     };
 
     const newAccessToken = this.jwtService.sign(payload);
@@ -119,6 +146,10 @@ export class AuthService {
   }
 
   async revokeRefreshToken(userId: string) {
+    // Invalidate all sessions for user or just specific?
+    // Default logout
+    await this.sessionService.invalidateAllUserSessions(userId);
+
     await this.prisma.user.update({
       where: { id: userId },
       data: { refreshToken: null },
@@ -162,7 +193,7 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, ipAddress: string = 'unknown', deviceId: string = 'unknown') {
     const { email, password } = loginDto;
 
     const user = await this.prisma.user.findUnique({
@@ -186,10 +217,18 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const sessionId = await this.sessionService.createSession(
+      user.id,
+      SessionContext.GENERAL,
+      deviceId,
+      ipAddress
+    );
+
     const payload = {
       userId: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+      sessionId,
     };
 
     const token = this.jwtService.sign(payload);

@@ -25,7 +25,9 @@ export class AuthController {
     @UseGuards(AuthGuard('google'))
     @ApiOperation({ summary: 'Google Auth Callback' })
     async googleAuthRedirect(@Req() req: any, @Res() res: any) {
-        const result = await this.authService.loginGoogle(req.user);
+        const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+        const userAgent = req.headers['user-agent'] || 'unknown';
+        const result = await this.authService.loginGoogle(req.user, ip, userAgent);
         // For simplicity, return JSON directly or redirect to a frontend with token
         // res.redirect(`http://localhost:3000?token=${result.access_token}`);
         // Since we don't know the frontend URL, returning JSON
@@ -42,8 +44,10 @@ export class AuthController {
     @Post('login')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Login user' })
-    async login(@Body() loginDto: LoginDto) {
-        return this.authService.login(loginDto);
+    async login(@Body() loginDto: LoginDto, @Req() req: any) {
+        const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+        const userAgent = req.headers['user-agent'] || 'unknown';
+        return this.authService.login(loginDto, ip, userAgent);
     }
 
     @Post('verify-otp')
@@ -71,8 +75,8 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Logout and revoke refresh token' })
-    async logout(@Body('userId') userId: string) {
-        await this.authService.revokeRefreshToken(userId);
+    async logout(@Req() req: any) {
+        await this.authService.revokeRefreshToken(req.user.userId);
         return { message: 'Logged out successfully' };
     }
 
