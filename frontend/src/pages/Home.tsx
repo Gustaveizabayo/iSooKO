@@ -133,8 +133,25 @@ const Home = () => {
                     </div>
                 </section>
 
+                {/* Partners Section - Brand Trusted By */}
+                <section className="py-12 bg-white border-y border-slate-100">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <p className="text-center text-sm font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">
+                            Trusted by the world's best companies
+                        </p>
+                        <div className="flex flex-wrap items-center justify-center gap-12 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                            {['Google', 'Microsoft', 'Amazon', 'Meta', 'Netflix', 'Airbnb'].map((brand) => (
+                                <span key={brand} className="text-2xl font-black text-[#0f2238] cursor-default">
+                                    {brand}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
                 {/* Stats Section */}
-                <section className="pt-8 pb-24 bg-slate-50">
+                <section className="py-24 bg-slate-50 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="grid grid-cols-2 gap-8 md:grid-cols-4 text-center">
                             {[
@@ -204,7 +221,7 @@ const Home = () => {
                 </section>
 
                 {/* Explore Categories Section */}
-                <section className="py-20 bg-white">
+                <section className="py-24 bg-white">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="mb-12 flex items-end justify-between">
                             <div>
@@ -239,6 +256,66 @@ const Home = () => {
                                         <p className="text-xs text-slate-500">{category.count}</p>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Testimonials Section */}
+                <section className="py-24 bg-[#0f2238] text-white relative overflow-hidden">
+                    {/* Decorative elements */}
+                    <div className="absolute top-0 left-0 h-20 w-full bg-gradient-to-b from-white to-transparent opacity-10"></div>
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl font-bold sm:text-4xl text-white">What Our Students Say</h2>
+                            <p className="mt-4 text-slate-300">Join thousands of successful learners worldwide</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                            {[
+                                {
+                                    name: "Sarah Jenkins",
+                                    role: "Software Engineer",
+                                    content: "iSooKO changed my life. The AI-integrated learning paths and proctored exams gave me the confidence I needed to switch careers.",
+                                    avatar: "https://i.pravatar.cc/150?u=sarah"
+                                },
+                                {
+                                    name: "Mark Wilson",
+                                    role: "Project Manager",
+                                    content: "The best LMS platform I've ever used. The interface is intuitive, and the quality of courses is premium. Highly recommended!",
+                                    avatar: "https://i.pravatar.cc/150?u=mark"
+                                },
+                                {
+                                    name: "Elena Rodriguez",
+                                    role: "UI Designer",
+                                    content: "As a designer, I appreciate the beautiful UI. The learning experience is seamless and the instructor support is outstanding.",
+                                    avatar: "https://i.pravatar.cc/150?u=elena"
+                                }
+                            ].map((testimonial, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 hover:bg-white/10 transition-all"
+                                >
+                                    <div className="flex gap-1 text-yellow-500 mb-6">
+                                        {[...Array(5)].map((_, i) => (
+                                            <span key={i}>★</span>
+                                        ))}
+                                    </div>
+                                    <p className="text-slate-300 leading-relaxed italic mb-8">
+                                        "{testimonial.content}"
+                                    </p>
+                                    <div className="flex items-center gap-4">
+                                        <img src={testimonial.avatar} alt={testimonial.name} className="h-12 w-12 rounded-full border-2 border-yellow-500" />
+                                        <div>
+                                            <h4 className="font-bold text-white">{testimonial.name}</h4>
+                                            <p className="text-xs text-slate-400">{testimonial.role}</p>
+                                        </div>
+                                    </div>
+                                </motion.div>
                             ))}
                         </div>
                     </div>

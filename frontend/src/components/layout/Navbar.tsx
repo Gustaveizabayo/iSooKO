@@ -1,11 +1,13 @@
 import { Search, Bell, LogIn, Menu, Lightbulb } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { useTheme } from '../../context/ThemeContext';
 
 const Navbar = () => {
     const user = authService.getCurrentUser();
+    const location = useLocation();
+    const isHomePage = location.pathname === '/';
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     // Theme context retained for potential future use but toggle removed from UI
@@ -21,9 +23,9 @@ const Navbar = () => {
 
     return (
         <nav
-            className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled
-                ? 'bg-[#0f2238] border-b border-white/10 shadow-lg py-3'
-                : 'bg-transparent py-5'
+            className={`fixed top-0 z-50 w-full transition-all duration-300 ${!isHomePage || scrolled
+                    ? 'bg-[#0f2238] border-b border-white/10 shadow-lg py-3'
+                    : 'bg-transparent py-5'
                 }`}
         >
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
