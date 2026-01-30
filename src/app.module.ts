@@ -22,6 +22,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { StudentsModule } from './modules/students/students.module';
 import { ProctoringModule } from './modules/proctoring/proctoring.module';
+import { ContactModule } from './modules/contact/contact.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { ProctoringModule } from './modules/proctoring/proctoring.module';
     AttendanceModule,
     StudentsModule,
     ProctoringModule,
+    ContactModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',

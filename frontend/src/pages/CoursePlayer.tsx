@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ChevronLeft,
     ChevronRight,
-    PlayCircle,
+    CirclePlay,
     FileText,
-    CheckCircle2,
+    CircleCheck,
     Settings,
     MessageSquare,
     Paperclip,
@@ -16,6 +16,7 @@ import ProctoringUI from '../components/proctoring/ProctoringUI';
 import { useQuery } from '@tanstack/react-query';
 import { courseService } from '../services/courseService';
 import { analyticsService } from '../services/analyticsService';
+import { attendanceService } from '../services/attendanceService';
 import { useEffect, useRef } from 'react';
 
 const CoursePlayer = () => {
@@ -56,11 +57,11 @@ const CoursePlayer = () => {
     const watchTimeRef = useRef(0);
     useEffect(() => {
         const interval = setInterval(() => {
-            if (courseId) {
+            if (courseId && modules[activeModule] && modules[activeModule].lessons[activeLesson]) {
                 watchTimeRef.current += 10;
                 analyticsService.trackProgress({
                     courseId: courseId as string,
-                    lessonId: modules[activeModule].lessons[activeLesson].title,
+                    lessonId: modules[activeModule].lessons[activeLesson].id || modules[activeModule].lessons[activeLesson].title,
                     watchedDuration: watchTimeRef.current,
                     totalDuration: 3600,
                     lastPosition: watchTimeRef.current
@@ -68,11 +69,19 @@ const CoursePlayer = () => {
             }
         }, 10000);
 
+        // Log Attendance when lesson starts
+        if (modules[activeModule] && modules[activeModule].lessons[activeLesson]) {
+            const lesson = modules[activeModule].lessons[activeLesson];
+            if (lesson.id) {
+                attendanceService.logPresence(lesson.id).catch(err => console.error("Attendance log failed:", err));
+            }
+        }
+
         return () => {
             clearInterval(interval);
             watchTimeRef.current = 0;
         };
-    }, [courseId, activeModule, activeLesson]);
+    }, [courseId, activeModule, activeLesson, modules]);
 
     if (isLoading) {
         return (
@@ -114,7 +123,7 @@ const CoursePlayer = () => {
                         <Settings className="h-5 w-5" />
                     </button>
                     <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-200">
-                        <CheckCircle2 className="h-5 w-5" />
+                        <CircleCheck className="h-5 w-5" />
                     </button>
                 </div>
             </header>
@@ -144,7 +153,7 @@ const CoursePlayer = () => {
                                     whileTap={{ scale: 0.95 }}
                                     className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-600 text-white shadow-2xl transition-all"
                                 >
-                                    <PlayCircle className="h-10 w-10 fill-current" />
+                                    <CirclePlay className="h-10 w-10 fill-current" />
                                 </motion.button>
                             </div>
 
@@ -225,7 +234,7 @@ const CoursePlayer = () => {
                                             >
                                                 <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-white'
                                                     }`}>
-                                                    {lesson.type === 'video' ? <PlayCircle className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                                                    {lesson.type === 'video' ? <CirclePlay className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className={`text-xs font-bold leading-tight ${isSelected ? 'text-white' : 'text-slate-700'}`}>
@@ -236,7 +245,7 @@ const CoursePlayer = () => {
                                                     </div>
                                                 </div>
                                                 {lessonIdx === 0 && modIdx === 0 ? (
-                                                    <CheckCircle2 className={`h-4 w-4 ${isSelected ? 'text-white' : 'text-green-500'}`} />
+                                                    <CircleCheck className={`h-4 w-4 ${isSelected ? 'text-white' : 'text-green-500'}`} />
                                                 ) : null}
                                             </button>
                                         );
@@ -259,3 +268,4 @@ const CoursePlayer = () => {
 };
 
 export default CoursePlayer;
+

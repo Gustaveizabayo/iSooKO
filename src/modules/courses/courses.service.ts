@@ -55,6 +55,46 @@ export class CoursesService {
         });
     }
 
+    async search(query: string) {
+        if (!query || query.trim().length === 0) {
+            return [];
+        }
+
+        const searchTerm = query.trim();
+
+        return this.prisma.course.findMany({
+            where: {
+                OR: [
+                    {
+                        title: {
+                            contains: searchTerm,
+                            mode: 'insensitive',
+                        },
+                    },
+                    {
+                        description: {
+                            contains: searchTerm,
+                            mode: 'insensitive',
+                        },
+                    },
+                    {
+                        category: {
+                            contains: searchTerm,
+                            mode: 'insensitive',
+                        },
+                    },
+                ],
+                status: CourseStatus.PUBLISHED, // Only show published courses in search
+            },
+            include: {
+                instructor: {
+                    select: { id: true, name: true },
+                },
+            },
+            take: 10, // Limit results
+        });
+    }
+
     async findOne(id: string) {
         const course = await this.prisma.course.findUnique({
             where: { id },
@@ -84,7 +124,8 @@ export class CoursesService {
                         user: { select: { name: true, avatarUrl: true } }
                     },
                     orderBy: { createdAt: 'desc' }
-                }
+                },
+                attachments: true
             },
         });
 

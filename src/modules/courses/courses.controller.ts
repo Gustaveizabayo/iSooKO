@@ -21,6 +21,13 @@ export class CoursesController {
       return this.coursesService.create(createCourseDto);
    }
 
+   @Get('search')
+   @ApiOperation({ summary: 'Search courses by query' })
+   @ApiQuery({ name: 'q', required: true, description: 'Search query' })
+   async search(@Query('q') query: string) {
+      return this.coursesService.search(query);
+   }
+
    @Get()
    @ApiOperation({ summary: 'Get all courses with filters' })
    @ApiQuery({ name: 'category', required: false })

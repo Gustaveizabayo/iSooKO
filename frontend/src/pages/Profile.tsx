@@ -1,47 +1,179 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
-    User,
+    User as UserIcon,
     Mail,
-    MapPin,
-    Globe,
-    Twitter,
-    Linkedin,
-    Github,
     Camera,
     Save,
     Loader2,
-    CheckCircle2,
-    ShieldCheck,
-    CreditCard
+    ArrowLeft,
+    Lock,
+    Eye,
+    EyeOff,
+    MapPin,
+    Link as LinkIcon,
+    Github,
+    Linkedin,
+    Twitter,
+    Briefcase
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import Navbar from '../components/layout/Navbar';
-import { userService, type UserProfile } from '../services/userService';
+import Sidebar from '../components/layout/Sidebar';
+import { authService } from '../services/authService';
+import { userService } from '../services/userService';
+import { toast } from 'sonner';
 
 const Profile = () => {
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
-    const [updateSuccess, setUpdateSuccess] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Initial user from local storage (fallback)
+    const localUser = authService.getCurrentUser();
 
     // Fetch real profile data
     const { data: profile, isLoading } = useQuery({
-        queryKey: ['user-profile'],
-        queryFn: () => userService.getProfile(),
+        queryKey: ['profile'],
+        queryFn: userService.getProfile,
     });
 
-    const [formData, setFormData] = useState<Partial<UserProfile>>({});
+    // Form state
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        bio: '',
+        headline: '',
+        location: '',
+        website: '',
+        twitter: '',
+        linkedin: '',
+        github: '',
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
 
-    // Update Mutation
-    const updateMutation = useMutation({
-        mutationFn: (data: Partial<UserProfile>) => userService.updateProfile(data),
+    // Update form data when profile builds
+    useEffect(() => {
+        if (profile) {
+            setFormData(prev => ({
+                ...prev,
+                name: profile.name || '',
+                email: profile.email || '',
+                bio: profile.bio || '',
+                headline: profile.headline || '',
+                location: profile.location || '',
+                website: profile.website || '',
+                twitter: profile.twitter || '',
+                linkedin: profile.linkedin || '',
+                github: profile.github || '',
+            }));
+        }
+    }, [profile]);
+
+    const [avatarPreview, setAvatarPreview] = useState(profile?.avatarUrl || localUser?.avatarUrl || '');
+
+    // Update avatar preview when profile loads
+    useEffect(() => {
+        if (profile?.avatarUrl) {
+            setAvatarPreview(profile.avatarUrl);
+        }
+    }, [profile?.avatarUrl]);
+
+    // Handle avatar upload
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+
+            // Upload
+            try {
+                const toastId = toast.loading('Uploading avatar...');
+                const result = await userService.uploadAvatar(file);
+
+                // Update profile with new avatar URL immediately
+                await userService.updateProfile({ avatarUrl: result.url });
+                queryClient.invalidateQueries({ queryKey: ['profile'] });
+
+                toast.dismiss(toastId);
+                toast.success('Avatar updated successfully');
+            } catch (error) {
+                console.error(error);
+                toast.error('Failed to upload avatar');
+                // Revert preview on error
+                setAvatarPreview(profile?.avatarUrl || '');
+            }
+        }
+    };
+
+    // Update Profile Mutation
+    const updateProfileMutation = useMutation({
+        mutationFn: userService.updateProfile,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-            setUpdateSuccess(true);
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            toast.success('Profile updated successfully!');
             setIsEditing(false);
-            setTimeout(() => setUpdateSuccess(false), 3000);
+            setFormData(prev => ({
+                ...prev,
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: ''
+            }));
         },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Failed to update profile');
+        }
     });
+
+    // Handle form submission
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Validate password change if attempted
+        if (formData.newPassword) {
+            if (!formData.currentPassword) {
+                toast.error('Please enter your current password to change it');
+                return;
+            }
+            if (formData.newPassword !== formData.confirmPassword) {
+                toast.error('New passwords do not match');
+                return;
+            }
+            if (formData.newPassword.length < 6) {
+                toast.error('Password must be at least 6 characters');
+                return;
+            }
+        }
+
+        // Prepare update data
+        const updateData: any = {
+            name: formData.name,
+            bio: formData.bio,
+            headline: formData.headline,
+            location: formData.location,
+            website: formData.website,
+            twitter: formData.twitter,
+            linkedin: formData.linkedin,
+            github: formData.github,
+        };
+
+        // Only include password if changing
+        if (formData.newPassword) {
+            updateData.currentPassword = formData.currentPassword;
+            updateData.newPassword = formData.newPassword;
+        }
+
+        updateProfileMutation.mutate(updateData);
+    };
 
     if (isLoading) {
         return (
@@ -51,193 +183,397 @@ const Profile = () => {
         );
     }
 
-    const handleSave = () => {
-        updateMutation.mutate(formData);
-    };
-
     return (
-        <div className="min-h-screen bg-slate-50/50">
-            <Navbar />
+        <div className="flex min-h-screen bg-slate-50">
+            <Sidebar />
 
-            <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Account Settings</h1>
-                        <p className="text-slate-500 font-medium">Manage your professional identity and account preferences.</p>
-                    </div>
-                    {updateSuccess && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-center gap-2 rounded-2xl bg-green-50 px-4 py-2 text-sm font-bold text-green-600 border border-green-100"
+            <div className="flex-1 lg:ml-64 transition-all duration-300">
+                {/* Header with Back Button */}
+                <div className="bg-white border-b border-slate-200 px-4 lg:px-8 py-6">
+                    <div className="flex items-center gap-4 mb-4">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors font-bold"
                         >
-                            <CheckCircle2 className="h-4 w-4" />
-                            Profile Updated
-                        </motion.div>
-                    )}
+                            <ArrowLeft className="h-5 w-5" />
+                            Back
+                        </button>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 className="text-2xl lg:text-3xl font-black text-slate-900">Profile Settings</h1>
+                            <p className="text-slate-500 font-medium mt-1">Manage your account information and preferences</p>
+                        </div>
+                        {!isEditing && (
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
+                            >
+                                Pencil Profile
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-                    {/* Sidebar */}
-                    <div className="space-y-6">
-                        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-                            <div className="relative mx-auto mb-6 h-32 w-32 group">
-                                <div className="h-full w-full overflow-hidden rounded-full border-4 border-slate-50 bg-slate-100">
-                                    <img
-                                        src={profile?.avatarUrl || `https://ui-avatars.com/api/?name=${profile?.name}&background=0D8ABC&color=fff&size=128`}
-                                        alt={profile?.name}
-                                        className="h-full w-full object-cover"
+                {/* Content */}
+                <div className="p-4 lg:p-8">
+                    <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6">
+                        {/* Avatar Section */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white rounded-2xl p-8 border border-slate-100"
+                        >
+                            <h2 className="text-xl font-black text-slate-900 mb-6">Profile Picture</h2>
+                            <div className="flex flex-col sm:flex-row items-center gap-6">
+                                <div className="relative group">
+                                    <div className="h-32 w-32 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center ring-4 ring-white shadow-lg">
+                                        {avatarPreview ? (
+                                            <img src={avatarPreview} alt="Avatar" className="h-full w-full object-cover" />
+                                        ) : (
+                                            <UserIcon className="h-16 w-16 text-white" />
+                                        )}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="absolute bottom-0 right-0 h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition-colors shadow-lg hover:scale-110 active:scale-95"
+                                    >
+                                        <Camera className="h-5 w-5" />
+                                    </button>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleAvatarChange}
+                                        className="hidden"
                                     />
                                 </div>
-                                <button className="absolute bottom-0 right-0 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-transform hover:scale-110 active:scale-95">
-                                    <Camera className="h-5 w-5" />
-                                </button>
-                            </div>
-                            <div className="text-center">
-                                <h2 className="text-xl font-bold text-slate-900">{profile?.name}</h2>
-                                <p className="text-sm font-medium text-slate-500">{profile?.headline || 'Learner at iSooKO Academy'}</p>
-                                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
-                                    {profile?.role}
+                                <div className="flex-1 text-center sm:text-left space-y-2">
+                                    <h3 className="text-2xl font-black text-slate-900">{profile?.name || 'User'}</h3>
+                                    <p className="text-slate-500 font-medium flex items-center justify-center sm:justify-start gap-2">
+                                        <Mail className="h-4 w-4" />
+                                        {profile?.email || 'email@example.com'}
+                                    </p>
+                                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                                        <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-wider">
+                                            {profile?.role || 'STUDENT'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
+                        </motion.div>
 
-                            <div className="mt-8 space-y-1">
-                                {[
-                                    { icon: User, label: 'Public Profile', active: true },
-                                    { icon: ShieldCheck, label: 'Security' },
-                                    { icon: CreditCard, label: 'Billing' },
-                                ].map((item, i) => (
-                                    <button
-                                        key={i}
-                                        className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all ${item.active ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'
-                                            }`}
-                                    >
-                                        <item.icon className="h-4 w-4" />
-                                        {item.label}
-                                    </button>
-                                ))}
+                        {/* Personal Information */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="bg-white rounded-2xl p-8 border border-slate-100"
+                        >
+                            <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                                <UserIcon className="h-5 w-5 text-blue-600" />
+                                Personal Information
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                        Full Name
+                                    </label>
+                                    <div className="relative">
+                                        <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            disabled={!isEditing}
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-colors"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                        Email Address
+                                    </label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            disabled={true} // Email usually cannot be changed easily
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium bg-slate-50 text-slate-500 cursor-not-allowed"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                        Headline / Title
+                                    </label>
+                                    <div className="relative">
+                                        <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={formData.headline}
+                                            onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
+                                            disabled={!isEditing}
+                                            placeholder="e.g. Senior Software Engineer"
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-colors"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                        Bio
+                                    </label>
+                                    <textarea
+                                        value={formData.bio}
+                                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                        disabled={!isEditing}
+                                        rows={4}
+                                        placeholder="Tell us about yourself..."
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 resize-none transition-colors"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                        Location
+                                    </label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={formData.location}
+                                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                            disabled={!isEditing}
+                                            placeholder="City, Country"
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-colors"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                        Website
+                                    </label>
+                                    <div className="relative">
+                                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="url"
+                                            value={formData.website}
+                                            onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                            disabled={!isEditing}
+                                            placeholder="https://yourwebsite.com"
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-colors"
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        </motion.div>
 
-                    {/* Form Content */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
-                            <div className="mb-8 flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-slate-900">Personal Information</h3>
-                                {!isEditing ? (
-                                    <button
-                                        onClick={() => {
-                                            setFormData(profile || {});
-                                            setIsEditing(true);
-                                        }}
-                                        className="text-sm font-bold text-blue-600 hover:underline"
-                                    >
-                                        Edit Profile
-                                    </button>
-                                ) : (
-                                    <div className="flex gap-4">
+                        {/* Social Links */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="bg-white rounded-2xl p-8 border border-slate-100"
+                        >
+                            <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                                <LinkIcon className="h-5 w-5 text-blue-600" />
+                                Social Profiles
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                        Twitter
+                                    </label>
+                                    <div className="relative">
+                                        <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={formData.twitter}
+                                            onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
+                                            disabled={!isEditing}
+                                            placeholder="@username"
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-colors"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                        LinkedIn
+                                    </label>
+                                    <div className="relative">
+                                        <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={formData.linkedin}
+                                            onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
+                                            disabled={!isEditing}
+                                            placeholder="Profile URL"
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-colors"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                        GitHub
+                                    </label>
+                                    <div className="relative">
+                                        <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={formData.github}
+                                            onChange={(e) => setFormData({ ...formData, github: e.target.value })}
+                                            disabled={!isEditing}
+                                            placeholder="Username"
+                                            className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-500 transition-colors"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {/* Change Password */}
+                        {isEditing && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                                className="bg-white rounded-2xl p-8 border border-slate-100"
+                            >
+                                <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                                    <Lock className="h-5 w-5 text-blue-600" />
+                                    Change Password
+                                </h2>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                            Current Password
+                                        </label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={formData.currentPassword}
+                                                onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                                                placeholder="Enter current password"
+                                                className="w-full pl-11 pr-11 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                            >
+                                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                                New Password
+                                            </label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                                <input
+                                                    type={showNewPassword ? 'text' : 'password'}
+                                                    value={formData.newPassword}
+                                                    onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                                                    placeholder="Enter new password"
+                                                    className="w-full pl-11 pr-11 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowNewPassword(!showNewPassword)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                                >
+                                                    {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2">
+                                                Confirm New Password
+                                            </label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                                <input
+                                                    type="password"
+                                                    value={formData.confirmPassword}
+                                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                                    placeholder="Confirm new password"
+                                                    className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-blue-500"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="sticky bottom-4 z-10">
+                            {isEditing && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-white/90 backdrop-blur-lg border border-slate-200 p-4 rounded-2xl shadow-xl flex items-center justify-between gap-4"
+                                >
+                                    <p className="hidden sm:block text-slate-500 font-medium text-sm">
+                                        You have unsaved changes
+                                    </p>
+                                    <div className="flex items-center gap-3 ml-auto">
                                         <button
-                                            onClick={() => setIsEditing(false)}
-                                            className="text-sm font-bold text-slate-400 hover:text-slate-600"
+                                            type="button"
+                                            onClick={() => {
+                                                setIsEditing(false);
+                                                // Reset form
+                                                if (profile) {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        name: profile.name || '',
+                                                        email: profile.email || '',
+                                                        bio: profile.bio || '',
+                                                        headline: profile.headline || '',
+                                                        location: profile.location || '',
+                                                        website: profile.website || '',
+                                                        twitter: profile.twitter || '',
+                                                        linkedin: profile.linkedin || '',
+                                                        github: profile.github || '',
+                                                        currentPassword: '',
+                                                        newPassword: '',
+                                                        confirmPassword: ''
+                                                    }));
+                                                }
+                                            }}
+                                            className="px-6 py-2 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors"
                                         >
                                             Cancel
                                         </button>
                                         <button
-                                            onClick={handleSave}
-                                            disabled={updateMutation.isPending}
-                                            className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:underline disabled:opacity-50"
+                                            type="submit"
+                                            disabled={updateProfileMutation.isPending}
+                                            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors disabled:opacity-50"
                                         >
-                                            {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                            {updateProfileMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                                             Save Changes
                                         </button>
                                     </div>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Full Name</label>
-                                    <div className="relative">
-                                        <User className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            disabled={!isEditing}
-                                            value={isEditing ? formData.name : profile?.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full rounded-2xl border border-slate-100 bg-slate-50 py-3 pl-12 pr-4 font-bold text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none disabled:opacity-60"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Email Address</label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="email"
-                                            disabled={true}
-                                            value={profile?.email}
-                                            className="w-full rounded-2xl border border-slate-100 bg-slate-100 py-3 pl-12 pr-4 font-bold text-slate-500 focus:outline-none opacity-60"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="col-span-2 space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Headline</label>
-                                    <input
-                                        type="text"
-                                        disabled={!isEditing}
-                                        placeholder="e.g. Senior Full Stack Developer"
-                                        value={isEditing ? formData.headline : profile?.headline}
-                                        onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
-                                        className="w-full rounded-2xl border border-slate-100 bg-slate-50 py-3 px-4 font-bold text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none disabled:opacity-60"
-                                    />
-                                </div>
-                                <div className="col-span-2 space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Bio</label>
-                                    <textarea
-                                        rows={4}
-                                        disabled={!isEditing}
-                                        value={isEditing ? formData.bio : profile?.bio}
-                                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                        placeholder="Tell us a bit about yourself..."
-                                        className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-4 font-bold text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none disabled:opacity-60 resize-none"
-                                    />
-                                </div>
-                            </div>
+                                </motion.div>
+                            )}
                         </div>
-
-                        <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
-                            <h3 className="mb-8 text-lg font-bold text-slate-900">Social Presence</h3>
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                {[
-                                    { icon: MapPin, label: 'Location', key: 'location', placeholder: 'New York, USA' },
-                                    { icon: Globe, label: 'Website', key: 'website', placeholder: 'https://johndoe.com' },
-                                    { icon: Twitter, label: 'Twitter', key: 'twitter', placeholder: '@johndoe' },
-                                    { icon: Linkedin, label: 'LinkedIn', key: 'linkedin', placeholder: 'linkedin.com/in/johndoe' },
-                                    { icon: Github, label: 'GitHub', key: 'github', placeholder: 'github.com/johndoe' },
-                                ].map((item, i) => (
-                                    <div key={i} className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.label}</label>
-                                        <div className="relative">
-                                            <item.icon className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                                            <input
-                                                type="text"
-                                                disabled={!isEditing}
-                                                value={isEditing ? (formData[item.key as keyof UserProfile] as string) : (profile?.[item.key as keyof UserProfile] as string)}
-                                                onChange={(e) => setFormData({ ...formData, [item.key]: e.target.value })}
-                                                placeholder={item.placeholder}
-                                                className="w-full rounded-2xl border border-slate-100 bg-slate-50 py-3 pl-12 pr-4 font-bold text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none disabled:opacity-60"
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    </form>
                 </div>
-            </main>
+            </div>
         </div>
     );
 };
 
 export default Profile;
+

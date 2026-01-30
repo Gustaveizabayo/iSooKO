@@ -35,5 +35,21 @@ export const userService = {
             },
         });
         return response.data;
+    },
+
+    // Admin methods
+    getUsersByRole: async (role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN') => {
+        const response = await api.get<UserProfile[]>(`/users?role=${role}`);
+        return response.data;
+    },
+
+    updateUserStatus: async (userId: string, status: string) => {
+        const response = await api.patch(`/users/${userId}/status`, { status });
+        return response.data;
+    },
+
+    deleteUser: async (userId: string) => {
+        const response = await api.delete(`/users/${userId}`);
+        return response.data;
     }
 };

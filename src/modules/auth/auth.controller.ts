@@ -27,11 +27,33 @@ export class AuthController {
     async googleAuthRedirect(@Req() req: any, @Res() res: any) {
         const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
         const userAgent = req.headers['user-agent'] || 'unknown';
-        const result = await this.authService.loginGoogle(req.user, ip, userAgent);
-        // For simplicity, return JSON directly or redirect to a frontend with token
-        // res.redirect(`http://localhost:3000?token=${result.access_token}`);
-        // Since we don't know the frontend URL, returning JSON
-        res.status(HttpStatus.OK).json(result);
+
+        try {
+            const result = await this.authService.loginGoogle(req.user, ip, userAgent);
+
+            // Redirect to frontend with tokens
+            const frontendUrl = process.env.NODE_ENV === 'production'
+                ? 'https://isooko.onrender.com'
+                : 'http://localhost:5174';
+
+            // Encode tokens and user data
+            const params = new URLSearchParams({
+                token: result.accessToken,
+                refreshToken: result.refreshToken,
+                userId: result.user.id,
+                email: result.user.email,
+                name: result.user.name,
+                role: result.user.role,
+            });
+
+            res.redirect(`${frontendUrl}/auth/google/success?${params.toString()}`);
+        } catch (error) {
+            // Redirect to frontend with error
+            const frontendUrl = process.env.NODE_ENV === 'production'
+                ? 'https://isooko.onrender.com'
+                : 'http://localhost:5174';
+            res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
+        }
     }
 
     @Post('register')

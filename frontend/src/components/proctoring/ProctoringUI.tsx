@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Camera, ShieldAlert, UserCheck, Maximize, Settings, AlertTriangle } from 'lucide-react';
+import { Camera, ShieldAlert, UserCheck, Maximize, Settings, TriangleAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { proctoringService } from '../../services/proctoringService';
 
@@ -105,7 +105,7 @@ const ProctoringUI = ({ attemptId }: { attemptId?: string }) => {
                                                 exit={{ x: 20, opacity: 0 }}
                                                 className="flex items-center gap-2 rounded bg-red-600 px-2 py-1 text-[8px] text-white"
                                             >
-                                                <AlertTriangle className="h-3 w-3" />
+                                                <TriangleAlert className="h-3 w-3" />
                                                 FLAGGED: {lastViolation}
                                             </motion.div>
                                         )}

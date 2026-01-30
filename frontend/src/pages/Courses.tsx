@@ -4,7 +4,68 @@ import { Search, Filter, SlidersHorizontal, BookOpen, Star, Clock, Loader2, X } 
 import { motion, AnimatePresence } from 'framer-motion';
 import { courseService } from '../services/courseService';
 import Navbar from '../components/layout/Navbar';
+import Footer from '../components/layout/Footer';
 import { Link } from 'react-router-dom';
+
+// Categories based on typical LMS data
+const categories = ['All', 'Computer Science', 'Data Science', 'Business', 'Art & Design', 'Marketing'];
+
+const MOCK_COURSES = [
+    {
+        id: 'mock-1',
+        title: 'Complete Web Development Bootcamp 2024',
+        category: 'Computer Science',
+        price: 89.99,
+        duration: 48,
+        thumbnailUrl: 'https://images.unsplash.com/photo-1587620962725-abab7fe55159?auto=format&fit=crop&q=80&w=800',
+        instructor: { name: 'Sarah Johnson' }
+    },
+    {
+        id: 'mock-2',
+        title: 'Advanced Data Science with Python',
+        category: 'Data Science',
+        price: 79.99,
+        duration: 32,
+        thumbnailUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800',
+        instructor: { name: 'Dr. Michael Chen' }
+    },
+    {
+        id: 'mock-3',
+        title: 'Digital Marketing Masterclass',
+        category: 'Marketing',
+        price: 59.99,
+        duration: 12,
+        thumbnailUrl: 'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&q=80&w=800',
+        instructor: { name: 'Emma Davis' }
+    },
+    {
+        id: 'mock-4',
+        title: 'UI/UX Design Fundamentals',
+        category: 'Art & Design',
+        price: 94.99,
+        duration: 24,
+        thumbnailUrl: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&q=80&w=800',
+        instructor: { name: 'Alex Thompson' }
+    },
+    {
+        id: 'mock-5',
+        title: 'Machine Learning A-Z',
+        category: 'Computer Science',
+        price: 69.99,
+        duration: 35,
+        thumbnailUrl: 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&q=80&w=800',
+        instructor: { name: 'James Wilson' }
+    },
+    {
+        id: 'mock-6',
+        title: 'Business Strategy & Leadership',
+        category: 'Business',
+        price: 84.99,
+        duration: 18,
+        thumbnailUrl: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=800',
+        instructor: { name: 'Robert Brown' }
+    }
+];
 
 const Courses = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -12,11 +73,8 @@ const Courses = () => {
     const [sortBy, setSortBy] = useState('newest');
     const [showFilters, setShowFilters] = useState(false);
 
-    // Categories based on typical LMS data
-    const categories = ['All', 'Computer Science', 'Data Science', 'Business', 'Art & Design', 'Marketing'];
-
     // Fetch courses with filters
-    const { data: courses, isLoading, isError } = useQuery({
+    const { data: apiCourses, isLoading } = useQuery({
         queryKey: ['courses', searchQuery, selectedCategory, sortBy],
         queryFn: () => courseService.getAll({
             search: searchQuery,
@@ -24,6 +82,15 @@ const Courses = () => {
             sort: sortBy
         }),
     });
+
+    // Use mock courses if API returns empty or fails
+    const displayCourses = (Array.isArray(apiCourses) && apiCourses.length > 0)
+        ? apiCourses
+        : MOCK_COURSES.filter(course => {
+            const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesCategory = selectedCategory === 'All' || course.category === selectedCategory;
+            return matchesSearch && matchesCategory;
+        });
 
     return (
         <div className="min-h-screen bg-slate-50/50">
@@ -101,8 +168,8 @@ const Courses = () => {
                                         key={cat}
                                         onClick={() => setSelectedCategory(cat)}
                                         className={`rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all ${selectedCategory === cat
-                                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                                                : 'bg-white border border-slate-100 text-slate-500 hover:bg-slate-50'
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                                            : 'bg-white border border-slate-100 text-slate-500 hover:bg-slate-50'
                                             }`}
                                     >
                                         {cat}
@@ -119,12 +186,7 @@ const Courses = () => {
                         <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
                         <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Updating Catalog...</p>
                     </div>
-                ) : isError ? (
-                    <div className="rounded-3xl bg-red-50 p-12 text-center text-red-600">
-                        <h3 className="text-xl font-bold mb-2">Failed to load courses</h3>
-                        <p>Please check your connection and try again.</p>
-                    </div>
-                ) : courses?.length === 0 ? (
+                ) : displayCourses?.length === 0 ? (
                     <div className="rounded-3xl border-2 border-dashed border-slate-200 p-20 text-center">
                         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
                             <BookOpen className="h-10 w-10" />
@@ -140,7 +202,7 @@ const Courses = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                        {courses?.map((course: any, i: number) => (
+                        {displayCourses?.map((course: any, i: number) => (
                             <motion.div
                                 key={course.id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -197,6 +259,7 @@ const Courses = () => {
                     </div>
                 )}
             </main>
+            <Footer />
         </div>
     );
 };

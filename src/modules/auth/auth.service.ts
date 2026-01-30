@@ -24,14 +24,23 @@ export class AuthService {
   ) { }
 
   async validateGoogleUser(details: any) {
-    const { email, firstName, lastName, googleId } = details;
+    const { email, firstName, lastName, googleId, picture } = details;
 
     // Check by googleId
     let user = await this.prisma.user.findUnique({
       where: { googleId },
     });
 
-    if (user) return user;
+    if (user) {
+      // Update avatar if changed
+      if (picture && user.avatarUrl !== picture) {
+        return this.prisma.user.update({
+          where: { id: user.id },
+          data: { avatarUrl: picture },
+        });
+      }
+      return user;
+    }
 
     // Check by email
     user = await this.prisma.user.findUnique({
@@ -39,22 +48,27 @@ export class AuthService {
     });
 
     if (user) {
-      // Link Google ID
+      // Link Google ID and update avatar
       return this.prisma.user.update({
         where: { id: user.id },
-        data: { googleId, status: UserStatus.ACTIVE }, // Ensure active if verifying via Google
+        data: {
+          googleId,
+          status: UserStatus.ACTIVE,
+          avatarUrl: picture || user.avatarUrl, // Use Google photo if available
+        },
       });
     }
 
-    // Create new user
+    // Create new user with Google profile
     return this.prisma.user.create({
       data: {
         email,
         name: `${firstName} ${lastName}`,
         googleId,
+        avatarUrl: picture, // Save Google profile photo
         password: '', // No password for Google users
         role: UserRole.STUDENT,
-        status: UserStatus.ACTIVE,
+        status: UserStatus.ACTIVE, // Auto-activate Google users
       },
     });
   }
@@ -86,8 +100,8 @@ export class AuthService {
     });
 
     return {
-      access_token: token,
-      refresh_token: refreshToken,
+      accessToken: token,
+      refreshToken: refreshToken,
       user: {
         id: user.id,
         email: user.email,
@@ -140,8 +154,8 @@ export class AuthService {
     });
 
     return {
-      access_token: newAccessToken,
-      refresh_token: newRefreshToken,
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     };
   }
 
@@ -234,7 +248,7 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
 
     return {
-      access_token: token,
+      accessToken: token,
       user: {
         id: user.id,
         email: user.email,
@@ -270,7 +284,25 @@ export class AuthService {
       data: { status: UserStatus.ACTIVE },
     });
 
-    return { message: 'Email verified successfully' };
+    // Auto-login after verification
+    const payload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const token = this.jwtService.sign(payload);
+
+    return {
+      message: 'Email verified successfully',
+      accessToken: token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      }
+    };
   }
 
   async resendOtp(resendOtpDto: ResendOtpDto) {

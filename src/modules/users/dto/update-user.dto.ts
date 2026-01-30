@@ -11,4 +11,9 @@ export class UpdateUserDto {
     @IsEmail()
     @IsOptional()
     email?: string;
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    avatarUrl?: string;
 }

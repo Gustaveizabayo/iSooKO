@@ -1,7 +1,8 @@
 import Navbar from '../components/layout/Navbar';
+import Footer from '../components/layout/Footer';
 import CourseCard from '../components/courses/CourseCard';
 import { motion } from 'framer-motion';
-import { BookOpen, Users, Trophy, Loader2, Award, Search, ArrowRight, Monitor, FlaskConical, Briefcase, Palette, Languages, Megaphone, Camera, Music, Sparkles, MessageCircle, Lightbulb } from 'lucide-react';
+import { BookOpen, Users, Trophy, Loader2, Award, Search, ArrowRight, Monitor, FlaskConical, Briefcase, Palette, Languages, Megaphone, Camera, Music, MessageCircle, Target, Eye, Zap } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { courseService } from '../services/courseService';
 import { useState, useEffect } from 'react';
@@ -60,7 +61,7 @@ const Home = () => {
                         >
                             <span className="inline-flex items-center gap-2 rounded-full bg-[#0f2238]/80 backdrop-blur-sm px-5 py-2 text-sm font-bold text-white ring-1 ring-white/10 shadow-2xl">
                                 <span className="text-yellow-500 mr-1">◀</span>
-                                Where Learning Meeta, Growth
+                                Where Learning Meets Growth
                             </span>
                         </motion.div>
 
@@ -81,7 +82,7 @@ const Home = () => {
                             className="mx-auto mt-8 max-w-2xl text-xl font-medium text-slate-100"
                         >
                             Learn from world-class instructors and gain the <br className="hidden md:block" />
-                            skills you need to succeed. 5+
+                            skills you need to succeed.
                         </motion.p>
 
                         {/* Search Bar - Matching provided image exactly */}
@@ -112,8 +113,8 @@ const Home = () => {
                             transition={{ delay: 0.4 }}
                             className="mt-10 flex flex-wrap justify-center gap-4 text-sm"
                         >
-                            <span className="font-bold text-white/80">Populate:</span>
-                            {['New Development', 'Data Stome', 'UDUE Desgn'].map((tag) => (
+                            <span className="font-bold text-white/80">Popular:</span>
+                            {['Web Development', 'Data Science', 'UI/UX Design'].map((tag) => (
                                 <button key={tag} className="rounded-lg bg-white/10 backdrop-blur-md px-5 py-1.5 text-white font-medium hover:bg-white/20 transition-all border border-white/10">
                                     {tag}
                                 </button>
@@ -133,19 +134,57 @@ const Home = () => {
                     </div>
                 </section>
 
-                {/* Partners Section - Brand Trusted By */}
-                <section className="py-12 bg-white border-y border-slate-100">
-                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                        <p className="text-center text-sm font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">
-                            Trusted by the world's best companies
+                {/* Partners Section - Continuous Marquee Slider */}
+                <section className="py-16 bg-white border-y border-slate-100 overflow-hidden group">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-10 text-center">
+                        <p className="inline-block px-4 py-1 rounded-full bg-blue-50 text-blue-600 text-[0.65rem] font-black uppercase tracking-[0.2em]">
+                            Our Global Partners
                         </p>
-                        <div className="flex flex-wrap items-center justify-center gap-12 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                            {['Google', 'Microsoft', 'Amazon', 'Meta', 'Netflix', 'Airbnb'].map((brand) => (
-                                <span key={brand} className="text-2xl font-black text-[#0f2238] cursor-default">
+                        <h3 className="mt-4 text-sm font-bold text-slate-400">Trusted by 500+ world-class companies and institutions</h3>
+                    </div>
+
+                    <div className="relative flex overflow-x-hidden">
+                        <motion.div
+                            animate={{
+                                x: [0, -1035],
+                            }}
+                            transition={{
+                                x: {
+                                    repeat: Infinity,
+                                    repeatType: "loop",
+                                    duration: 30,
+                                    ease: "linear",
+                                },
+                            }}
+                            className="flex whitespace-nowrap gap-16 items-center"
+                        >
+                            {[
+                                'SOLVIT', 'IZUBA TV', 'Schnell Media', 'LIGHTMGROUP', 'Kwely',
+                            ].map((brand, i) => (
+                                <span
+                                    key={i}
+                                    className="text-2xl font-black text-blue-600/40 hover:text-[#0f2238] transition-colors duration-300 cursor-default uppercase tracking-tight"
+                                >
                                     {brand}
                                 </span>
                             ))}
-                        </div>
+                            {/* Duplicate for seamless loop */}
+                            {[
+                                'SOLVIT', 'IZUBA TV', 'Schnell Media', 'LIGHTMGROUP', 'Kwely',
+
+                            ].map((brand, i) => (
+                                <span
+                                    key={`loop-${i}`}
+                                    className="text-2xl font-black text-blue-600/40 hover:text-[#0f2238] transition-colors duration-300 cursor-default uppercase tracking-tight"
+                                >
+                                    {brand}
+                                </span>
+                            ))}
+                        </motion.div>
+
+                        {/* Faded edges for better transition */}
+                        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white to-transparent z-10"></div>
+                        <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-white to-transparent z-10"></div>
                     </div>
                 </section>
 
@@ -173,7 +212,7 @@ const Home = () => {
                 </section>
 
                 {/* Featured Courses - Main on landing page */}
-                <section className="py-20 bg-slate-50">
+                <section className="py-24 bg-white">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="mb-12 flex items-end justify-between">
                             <div>
@@ -221,7 +260,8 @@ const Home = () => {
                 </section>
 
                 {/* Explore Categories Section */}
-                <section className="py-24 bg-white">
+                <section className="py-24 bg-slate-50 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="mb-12 flex items-end justify-between">
                             <div>
@@ -261,10 +301,80 @@ const Home = () => {
                     </div>
                 </section>
 
-                {/* Testimonials Section */}
-                <section className="py-24 bg-[#0f2238] text-white relative overflow-hidden">
+                {/* Features Section - Highlighting LMS Capabilities */}
+                <section className="py-24 bg-white relative overflow-hidden">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <span className="inline-block rounded-full bg-blue-50 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-blue-600 mb-4">
+                                Why Choose iSooKO
+                            </span>
+                            <h2 className="text-3xl font-black text-[#0f2238] sm:text-4xl">
+                                Everything You Need to <span className="text-blue-600">Succeed</span>
+                            </h2>
+                            <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
+                                A complete ecosystem designed for students, instructors, and administrators.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {[
+                                {
+                                    title: "Interactive Courses",
+                                    desc: "Engage with high-quality video lessons, quizzes, and real-time feedback.",
+                                    icon: BookOpen,
+                                    color: "bg-blue-500",
+                                    gradient: "from-blue-500 to-cyan-500"
+                                },
+                                {
+                                    title: "Smart Attendance",
+                                    desc: "Automated tracking for physical and virtual sessions with detailed reports.",
+                                    icon: Target,
+                                    color: "bg-green-500",
+                                    gradient: "from-green-500 to-emerald-500"
+                                },
+                                {
+                                    title: "Instructor Tools",
+                                    desc: "Powerful studio to create, manage, and grade courses effortlessly.",
+                                    icon: Briefcase,
+                                    color: "bg-purple-500",
+                                    gradient: "from-purple-500 to-pink-500"
+                                },
+                                {
+                                    title: "Admin Control",
+                                    desc: "Comprehensive dashboard for user management, security, and analytics.",
+                                    icon: Trophy, // Using Trophy as a placeholder for 'Control/Shield' vibe or similar
+                                    color: "bg-orange-500",
+                                    gradient: "from-orange-500 to-red-500"
+                                }
+                            ].map((feature, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="group relative bg-white rounded-[2rem] p-8 border border-slate-100 shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 overflow-hidden"
+                                >
+                                    <div className={`absolute top-0 right-0 h-32 w-32 bg-gradient-to-br ${feature.gradient} opacity-10 rounded-bl-[100px] transition-transform group-hover:scale-110`} />
+
+                                    <div className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-white shadow-lg mb-6 group-hover:scale-110 transition-transform`}>
+                                        <feature.icon className="h-7 w-7" />
+                                    </div>
+
+                                    <h3 className="text-xl font-black text-[#0f2238] mb-3 group-hover:text-blue-600 transition-colors">
+                                        {feature.title}
+                                    </h3>
+                                    <p className="text-slate-500 font-medium leading-relaxed">
+                                        {feature.desc}
+                                    </p>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+                <section className="py-28 bg-gradient-to-b from-[#0f2238] via-[#1a3a5a] to-[#0f2238] text-white relative overflow-hidden">
                     {/* Decorative elements */}
-                    <div className="absolute top-0 left-0 h-20 w-full bg-gradient-to-b from-white to-transparent opacity-10"></div>
+                    <div className="absolute top-0 left-0 h-32 w-full bg-white/5 backdrop-blur-3xl opacity-20"></div>
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl font-bold sm:text-4xl text-white">What Our Students Say</h2>
@@ -320,6 +430,109 @@ const Home = () => {
                         </div>
                     </div>
                 </section>
+
+                {/* About Us Section - Full Screen Refined Layout */}
+                <section className="relative min-h-[90vh] flex items-center overflow-hidden py-24">
+                    {/* Background with Overlay */}
+                    <div className="absolute inset-0 z-0">
+                        <img
+                            src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80&w=2000"
+                            alt="Student in Library"
+                            className="h-full w-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-[#0f2238]/90 backdrop-blur-[2px]"></div>
+                    </div>
+
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                            <motion.div
+                                initial={{ opacity: 0, x: -30 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                className="space-y-8"
+                            >
+                                <div>
+                                    <span className="inline-block rounded-full bg-yellow-500 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-[#0f2238] mb-6">
+                                        About Us
+                                    </span>
+                                    <h2 className="text-4xl md:text-6xl font-black text-white leading-[1.1] mb-6">
+                                        Where Learning <br />
+                                        <span className="text-yellow-500 text-glow">Meets Growth</span>
+                                    </h2>
+                                    <h3 className="text-xl font-bold text-slate-300 mb-8 italic">"Unlock Your Full Potential"</h3>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="flex gap-4 items-start bg-white/5 p-6 rounded-[2rem] border border-white/10 hover:bg-white/10 transition-all group">
+                                        <div className="h-12 w-12 bg-yellow-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                            <Target className="h-6 w-6 text-[#0f2238]" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-white font-black uppercase text-xs tracking-widest mb-2">Our Mission</h4>
+                                            <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                                                iSooKO is an online learning platform that provides courses and learning resources curated by world-class instructors. Our mission is to make learning fun, flexible, and accessible for everyone.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-4 items-start bg-white/5 p-6 rounded-[2rem] border border-white/10 hover:bg-white/10 transition-all group">
+                                        <div className="h-12 w-12 bg-blue-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                            <Eye className="h-6 w-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-white font-black uppercase text-xs tracking-widest mb-2">Our Vision</h4>
+                                            <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                                                To become a world-class online learning platform empower individuals through accessible learning.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-6">
+                                    <a href="/contact" className="inline-flex items-center gap-3 rounded-2xl bg-white px-10 py-5 text-base font-black text-[#0f2238] shadow-2xl hover:bg-yellow-500 transition-all active:scale-95 group">
+                                        Partner With Us <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                                    </a>
+                                </div>
+                            </motion.div>
+
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                viewport={{ once: true }}
+                                className="relative hidden lg:block"
+                            >
+                                <div className="absolute inset-0 bg-yellow-500 blur-[150px] opacity-20 -z-10 animate-pulse"></div>
+                                <div className="bg-white/5 backdrop-blur-3xl rounded-[3rem] border border-white/10 p-12 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-8">
+                                        <div className="h-20 w-20 bg-yellow-500 rounded-3xl flex flex-col items-center justify-center text-[#0f2238] shadow-2xl rotate-12 group-hover:rotate-0 transition-transform">
+                                            <span className="text-2xl font-black">10+</span>
+                                            <span className="text-[10px] font-black uppercase leading-none">Years</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-8">
+                                        <div className="flex items-center gap-6">
+                                            <div className="h-16 w-16 bg-blue-500 rounded-2xl flex items-center justify-center shadow-xl">
+                                                <Zap className="h-8 w-8 text-white" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-2xl font-black text-white">Experience Excellence</h4>
+                                                <p className="text-slate-400 font-medium">Over a decade of academic impact</p>
+                                            </div>
+                                        </div>
+                                        <div className="h-px bg-white/10 w-full" />
+                                        <p className="text-slate-300 text-lg font-medium leading-relaxed italic">
+                                            "Learning is not just about information, it's about transformation. At iSooKO, we bridge the gap between where you are and where you want to be."
+                                        </p>
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-1 w-12 bg-yellow-500 rounded-full" />
+                                            <span className="text-xs font-black uppercase tracking-widest text-slate-400">Trusted Worldwide</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </div>
+                </section>
             </main>
 
             {/* Floating Chat Button */}
@@ -327,78 +540,10 @@ const Home = () => {
                 <MessageCircle className="h-6 w-6" />
             </button>
 
-            {/* Footer - Matching Image 1 */}
-            <footer className="bg-[#0f2238] text-white">
-                {/* CTA Section */}
-                <div className="border-b border-white/10">
-                    <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 text-center">
-                        <h2 className="text-3xl font-bold sm:text-4xl mb-4">Ready to Start Learning?</h2>
-                        <p className="text-slate-400 mb-10 max-w-xl mx-auto">
-                            Join thousands of learners who are already growing their skills with iSooKO.
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <button className="rounded-lg bg-yellow-500 px-8 py-3 text-base font-bold text-[#0f2238] hover:bg-yellow-400 transition-colors flex items-center gap-2">
-                                <Trophy className="h-4 w-4" /> Start Learning Free
-                            </button>
-                            <input
-                                type="email"
-                                placeholder="Enter your email"
-                                className="w-full max-w-xs rounded-lg border-0 bg-white px-4 py-3 text-[#0f2238] placeholder-slate-400 focus:ring-2 focus:ring-yellow-500"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Links Section */}
-                <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 gap-8 md:grid-cols-4 lg:grid-cols-5">
-                        <div className="col-span-1 lg:col-span-2 space-y-4">
-                            <div className="flex items-center gap-2">
-                                <Sparkles className="h-6 w-6 text-yellow-500" />
-                                <span className="text-xl font-bold">iSooKo</span>
-                            </div>
-                            <p className="text-sm text-slate-400 max-w-xs">
-                                Where Learning Meets Growth. Empowering learners worldwide with top-tier education.
-                            </p>
-                        </div>
-
-                        <div>
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Explore</h3>
-                            <ul className="space-y-3 text-sm text-slate-400">
-                                <li><a href="#" className="hover:text-yellow-500 transition-colors">All Courses</a></li>
-                                <li><a href="#" className="hover:text-yellow-500 transition-colors">Categories</a></li>
-                                <li><a href="#" className="hover:text-yellow-500 transition-colors">Teach on iSooKO</a></li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Support</h3>
-                            <ul className="space-y-3 text-sm text-slate-400">
-                                <li><a href="#" className="hover:text-yellow-500 transition-colors">Help Center</a></li>
-                                <li><a href="#" className="hover:text-yellow-500 transition-colors">Contact Us</a></li>
-                                <li><a href="#" className="hover:text-yellow-500 transition-colors">FAQs</a></li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Legal</h3>
-                            <ul className="space-y-3 text-sm text-slate-400">
-                                <li><a href="#" className="hover:text-yellow-500 transition-colors">Privacy Policy</a></li>
-                                <li><a href="#" className="hover:text-yellow-500 transition-colors">Terms of Service</a></li>
-                                <li><a href="#" className="hover:text-yellow-500 transition-colors">Cookie Policy</a></li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div className="mt-16 border-t border-white/10 pt-8 text-center">
-                        <p className="text-sm text-slate-500">© 2026 iSooKO. All rights reserved.</p>
-                    </div>
-                </div>
-            </footer>
+            {/* Footer */}
+            <Footer />
         </div>
     );
 };
-
-
 
 export default Home;

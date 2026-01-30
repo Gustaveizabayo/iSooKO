@@ -1,4 +1,4 @@
-import { Star, Clock, User, BookOpen, Users } from 'lucide-react';
+import { Star, Clock, Users, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface CourseCardProps {
@@ -57,8 +57,8 @@ const CourseCard = ({
                 {/* Category & Level */}
                 <div className="mb-4 flex items-center gap-2">
                     <span className={`rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${level === 'Beginner' ? 'bg-emerald-50 text-emerald-600' :
-                            level === 'Intermediate' ? 'bg-amber-50 text-amber-600' :
-                                'bg-red-50 text-red-600'
+                        level === 'Intermediate' ? 'bg-amber-50 text-amber-600' :
+                            'bg-red-50 text-red-600'
                         }`}>
                         {level}
                     </span>

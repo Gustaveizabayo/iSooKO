@@ -21,5 +21,10 @@ export const reviewService = {
     getByCourse: async (courseId: string) => {
         const response = await api.get<Review[]>(`/reviews/course/${courseId}`);
         return response.data;
+    },
+
+    toggleLike: async (courseId: string) => {
+        const response = await api.post(`/reviews/like/${courseId}`);
+        return response.data;
     }
 };
